@@ -74,13 +74,13 @@ class PCY:
     def set_freq_item_table_length(self, n):
         self.freq_item_table = self.freq_item_table[:n] + [0] * (n - len(self.freq_item_table))
 
-    def set_max_int(self): # Needs to be tested
+    def set_max_int(self):
         fn = self.filename
-        for line in self.selected_baskets:
-            a = map(int, linecache.getline(fn, line).split())
-            for i in a:
-                if self.max_int < line[i]:
-                    self.max_int = line[i]
+        for basket in self.selected_baskets:
+            line = map(int, linecache.getline(fn, basket).split())
+            for i in line:
+                if self.max_int < i:
+                    self.max_int = i
                     self.set_freq_item_table_length(self.max_int + 1)
         # Can remove after testing
         print("Max_int = {}".format(self.max_int))
@@ -102,13 +102,13 @@ class PCY:
                         numbers[n] = False
             return prime_list
 
-        number = self.max_int
-        primes = getPrimes(number + number*1.5)
+        n = int(self.max_int*2.5)
+        primes = getPrimes(n)
         max_dist = math.inf
         numb = 0
         for p in primes:
-            if abs(number - p) < max_dist:
-                max_dist = abs(number - p)
+            if abs(n - p) < max_dist:
+                max_dist = abs(n - p)
                 numb = p
 
         self.hash_prime = numb
