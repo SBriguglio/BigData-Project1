@@ -50,7 +50,7 @@ class APriori:
             for i in range(0, n):
                 while True:
                     random.seed()
-                    b = random.randint(0, self.n_buckets) # - 1)
+                    b = random.randint(0, self.n_buckets)  # - 1)
                     if not self.selected_baskets.__contains__(b):
                         self.selected_baskets.append(b + 1)
                         break
@@ -80,7 +80,7 @@ class APriori:
                     self.max_int = i
                     self.set_freq_item_table_length(self.max_int + 1)
                 try:
-                    self.freq_item_table[i] += 1 # Keep getting list index out of range error here
+                    self.freq_item_table[i] += 1  # Keep getting list index out of range error here
                 except IndexError:
                     print("[!!] IndexError: i of the index. i = {}".format(i))
         for i in range(0, self.max_int):
@@ -113,29 +113,3 @@ class APriori:
         for i in self.freq_pairs_list:
             index = int((i[0] - 1) * (self.max_int - (i[0] / 2))) + i[1] - i[0]
             print("{}, {} : {}".format(i[0], i[1], self.pairs_tri_matrix[index]))
-
-
-if __name__ == '__main__':
-    x = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    y = []
-
-    for i in x:
-        n = 0.01 * i
-        print(n)
-        try:
-            a = APriori(sample_size=n)
-            a.a_priori()
-        except IndexError:
-            print("An Error Occurred")
-        finally:
-            break
-
-    plt.plot(x, y)
-    plt.xlabel("Dataset Size (%)")
-    plt.ylabel("Run time (ms)")
-    plt.title("Support Threshold 1%")
-    plt.show()
-
-    print("Done")
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
