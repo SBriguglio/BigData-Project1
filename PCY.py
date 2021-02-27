@@ -104,8 +104,6 @@ class PCY:
                 if self.max_int < i:
                     self.max_int = i
                     self.set_freq_item_table_length(self.max_int + 1)
-        # Can remove after testing
-        print("Max_int = {}".format(self.max_int))
 
     def set_hash_prime(self):
         """
@@ -117,7 +115,6 @@ class PCY:
         n = int(self.max_int+50)
         prime = getPrimes(n)
         self.hash_prime = prime
-        print("hash_prime = {}".format(self.hash_prime))
 
     def set_hash_prime_2(self):
         """
@@ -129,7 +126,6 @@ class PCY:
         n = int((self.max_int/2)+50)
         prime = getPrimes(n)
         self.hash_prime_2 = prime
-        print("hash_prime_2 = {}".format(self.hash_prime_2))
 
     def hash_a(self, i, j):
         return (i*j+j-i) % self.hash_prime
@@ -149,7 +145,7 @@ class PCY:
         self.bitmap_2 = bitarray(self.hash_prime_2)
         self.bitmap_2.setall(0)
 
-    def pcyA(self, verbose=0):
+    def pcyA(self, verbose=0, reset=True):
         fn = self.filename
         # Pass 1:
         start_time = time.time()
@@ -186,8 +182,6 @@ class PCY:
                     self.freq_item_table[line[length-1]] += 1  # Kept getting list index out of range error here
                 except IndexError:
                     print("[!!] IndexError: (C) i of the index. i = {}".format(line[length-1]))
-        # close file as it is no longer needed
-        self.close_file()
 
         # Hash Frequent Pairs to BitMap, get rid of old buckets
         for b in range(0, self.hash_prime):
@@ -209,11 +203,10 @@ class PCY:
 
         # free hash table for pairs and Item Counts table
         self.bucket_hash = None
-        self.freq_item_table = None
+        self.freq_item_table = [0]
 
         # end of run time
         end_time = time.time()
-
         self.runtime = end_time - start_time
 
         # this just prints the frequent pairs, so it is not measured in run time
@@ -223,11 +216,21 @@ class PCY:
         if verbose == 1:
             print("[PCY]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
 
+        # resetting attributes to allow pcyA, pcyB and pcyC to be run from the same instance of PCY object
+        # this eliminates the need to reinitialize a PCY object for every test
+        # also ensures same data is used across every test
+        if reset:
+            self.bitmap = None
+            self.freq_items = []
+            self.freq_pairs_list = {}
+            self.set_freq_item_table_length(self.max_int + 1)
+            self.set_bitmap_size()
+            self.set_bitmap_2_size()
         # Note that because this method (pcyA) updates the PCY object's bitmap, candidate pair count dictionary and
         # frequent item list, the multistage and multihash method (below) will simply call upon this method.
 
-    def pcyB(self, verbose=0, a_verbose=0):
-        self.pcyA(verbose=a_verbose)
+    def pcyB(self, verbose=0, a_verbose=0, reset=True):
+        self.pcyA(verbose=a_verbose, reset=False)
         self.bucket_hash = np.zeros(int(self.hash_prime_2), np.int32)
         # start of run time
         start_time = time.time()
@@ -264,7 +267,21 @@ class PCY:
         if verbose == 1:
             print("[Multistage]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
 
-    def pcyC(self, verbose=0):
+        # resetting attributes to allow pcyA, pcyB and pcyC to be run from the same instance of PCY object
+        # this eliminates the need to reinitialize a PCY object for every test
+        # also ensures same data is used across every test
+        if reset:
+            self.bucket_hash = None
+            self.freq_item_table = [0]
+            self.bitmap = None
+            self.bitmap_2 = None
+            self.freq_items = []
+            self.freq_pairs_list = {}
+            self.set_freq_item_table_length(self.max_int + 1)
+            self.set_bitmap_size()
+            self.set_bitmap_2_size()
+
+    def pcyC(self, verbose=0, reset=True):
         fn = self.filename
         # Pass 1:
         start_time = time.time()
@@ -347,3 +364,17 @@ class PCY:
                 print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
         if verbose == 1:
             print("[Multistage]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
+
+        # resetting attributes to allow pcyA, pcyB and pcyC to be run from the same instance of PCY object
+        # this eliminates the need to reinitialize a PCY object for every test
+        # also ensures same data is used across every test
+        if reset:
+            self.bucket_hash = None
+            self.freq_item_table = [0]
+            self.bitmap = None
+            self.bitmap_2 = None
+            self.freq_items = []
+            self.freq_pairs_list = {}
+            self.set_freq_item_table_length(self.max_int + 1)
+            self.set_bitmap_size()
+            self.set_bitmap_2_size()
