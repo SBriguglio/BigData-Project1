@@ -1,10 +1,28 @@
 import linecache
 import random
 import time
-import matplotlib.pyplot as plt
 import numpy as np
 import math
 from bitarray import bitarray
+
+
+def getPrimes(limit):
+    prime_list = []
+    numbers = [True] * limit
+    for i in range(2, limit):
+        if numbers[i]:
+            prime_list.append(i)
+            for n in range(i ** 2, limit, i):
+                numbers[n] = False
+
+    max_dist = math.inf
+    numb = 0
+    for p in prime_list:
+        if abs(n - p) < max_dist:
+            max_dist = abs(n - p)
+            numb = p
+
+    return numb
 
 
 class PCY:
@@ -16,6 +34,7 @@ class PCY:
         self.n_sample_buckets = None
         self.max_int = 0
         self.hash_prime = 1
+        self.hash_prime_2 = 2
         self.support = support
         self.s = 0
         self.selected_baskets = []
@@ -24,6 +43,7 @@ class PCY:
         self.freq_pairs_list = {}
         self.bucket_hash = None
         self.bitmap = None
+        self.bitmap_2 = None
         self.runtime = 0
 
         self.open_file()
@@ -31,9 +51,11 @@ class PCY:
         self.set_n_sample_buckets()
         self.set_s()
         self.choose_selected_baskets()
-        self.set_max_int()  # <-- Error Here (Calls Line 82)
+        self.set_max_int()
         self.set_hash_prime()
+        self.set_hash_prime_2()
         self.set_bitmap_size()
+        self.set_bitmap_2_size()
         print("Ready")
 
     def open_file(self):
@@ -93,30 +115,28 @@ class PCY:
         Eratosthenes method.
         It can be found here: https://stackoverflow.com/questions/58680930/closest-prime-number-in-python
         """
-        def getPrimes(limit):
-            prime_list = []
-            numbers = [True] * limit
-            for i in range(2, limit):
-                if numbers[i]:
-                    prime_list.append(i)
-                    for n in range(i ** 2, limit, i):
-                        numbers[n] = False
-            return prime_list
-
         n = int(self.max_int+50)
-        primes = getPrimes(n)
-        max_dist = math.inf
-        numb = 0
-        for p in primes:
-            if abs(n - p) < max_dist:
-                max_dist = abs(n - p)
-                numb = p
-
-        self.hash_prime = numb
+        prime = getPrimes(n)
+        self.hash_prime = prime
         print("hash_prime = {}".format(self.hash_prime))
 
+    def set_hash_prime_2(self):
+        """
+        I am using this method just to choose a prime number close to the maximum number found in data.
+        This method is largely an adaptation of one found on stack overflow to find nearest primes using the Sieve of
+        Eratosthenes method.
+        It can be found here: https://stackoverflow.com/questions/58680930/closest-prime-number-in-python
+        """
+        n = int((self.max_int/2)+50)
+        prime = getPrimes(n)
+        self.hash_prime_2 = prime
+        print("hash_prime_2 = {}".format(self.hash_prime_2))
+
     def hash_a(self, i, j):
-        return (i*i*j*j+j-i) % self.hash_prime
+        return (i*j+j-i) % self.hash_prime
+
+    def hash_b(self, i, j):
+        return (i**2 + i**2 - j) % int(self.hash_prime_2)
 
     def set_bitmap_size(self):
         """
@@ -126,7 +146,11 @@ class PCY:
         self.bitmap = bitarray(self.hash_prime)
         self.bitmap.setall(0)
 
-    def pcyA(self):
+    def set_bitmap_2_size(self):
+        self.bitmap_2 = bitarray(self.hash_prime_2)
+        self.bitmap_2.setall(0)
+
+    def pcyA(self, verbose=0):
         fn = self.filename
         # Pass 1:
         start_time = time.time()
@@ -188,13 +212,54 @@ class PCY:
         self.bucket_hash = None
         self.freq_item_table = None
 
-        # Pass 2
-
-
         # end of run time
         end_time = time.time()
 
         self.runtime = end_time - start_time
+
         # this just prints the frequent pairs, so it is not measured in run time
-        for p in self.freq_pairs_list:
-            print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
+        if verbose == 2:
+            for p in self.freq_pairs_list:
+                print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
+        if verbose == 1:
+            print("[PCY]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
+
+        # Note that because this method (pcyA) updates the PCY object's bitmap, candidate pair count dictionary and
+        # frequent item list, the multistage and multihash method (below) will simply call upon this method.
+
+    def pcyB(self, verbose=0, a_verbose=0):
+        self.pcyA(verbose=a_verbose)
+        self.bucket_hash = np.zeros(int(self.hash_prime_2), np.int32)
+        # start of run time
+        start_time = time.time()
+
+        # rehash all frequent pairs to new hashtable
+        for i in self.freq_pairs_list:
+            h = self.hash_b(i[0], i[1])
+            self.bucket_hash[h] += self.freq_pairs_list[i]
+
+        # reduce hashtable to bitmap ONLY accepting frequent buckets
+        index = 0
+        for b in self.bucket_hash:
+            if b >= self.s:
+                self.bitmap_2[index] = 1
+            index += 1
+
+        # remove candidate pairs that aren't frequent by removing those which do not hash to frequent bucket in bitmap
+        freq_pairs = {}
+        for i in self.freq_pairs_list:
+            h = self.hash_b(i[0], i[1])
+            if self.bitmap_2[h] == 1:
+                freq_pairs[i] = self.freq_pairs_list[i]
+        self.freq_pairs_list = freq_pairs
+
+        # end of run time
+        end_time = time.time()
+        self.runtime += end_time - start_time
+
+        # print frequent pairs
+        if verbose == 2:
+            for p in self.freq_pairs_list:
+                print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
+        if verbose == 1:
+            print("[Multistage]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
