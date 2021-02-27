@@ -35,6 +35,6 @@ if __name__ == '__main__':
 
     p = PCY.PCY(sample_size=0.3)
     # p.pcyA(verbose=0)
-    p.pcyB(verbose=1, a_verbose=1)
+    p.pcyC(verbose=1)
 
     print("Done")

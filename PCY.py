@@ -14,14 +14,12 @@ def getPrimes(limit):
             prime_list.append(i)
             for n in range(i ** 2, limit, i):
                 numbers[n] = False
-
     max_dist = math.inf
     numb = 0
     for p in prime_list:
         if abs(n - p) < max_dist:
             max_dist = abs(n - p)
             numb = p
-
     return numb
 
 
@@ -42,6 +40,7 @@ class PCY:
         self.freq_items = []
         self.freq_pairs_list = {}
         self.bucket_hash = None
+        self.bucket_hash_2 = None
         self.bitmap = None
         self.bitmap_2 = None
         self.runtime = 0
@@ -248,10 +247,95 @@ class PCY:
         # remove candidate pairs that aren't frequent by removing those which do not hash to frequent bucket in bitmap
         freq_pairs = {}
         for i in self.freq_pairs_list:
-            h = self.hash_b(i[0], i[1])
-            if self.bitmap_2[h] == 1:
+            h1 = self.hash_a(i[0], i[1])
+            h2 = self.hash_b(i[0], i[1])
+            if self.bitmap[h1] == 1 and self.bitmap_2[h2] == 1:
                 freq_pairs[i] = self.freq_pairs_list[i]
         self.freq_pairs_list = freq_pairs
+
+        # end of run time
+        end_time = time.time()
+        self.runtime += end_time - start_time
+
+        # print frequent pairs
+        if verbose == 2:
+            for p in self.freq_pairs_list:
+                print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
+        if verbose == 1:
+            print("[Multistage]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))
+
+    def pcyC(self, verbose=0):
+        fn = self.filename
+        # Pass 1:
+        start_time = time.time()
+        self.bucket_hash = np.zeros(self.hash_prime, np.int32)
+        self.bucket_hash_2 = np.zeros(self.hash_prime_2, np.int32)
+        for basket in self.selected_baskets:
+            line = list([l for l in map(int, linecache.getline(fn, basket).split())])
+            length = len(line)
+            # update frequency of the item if the bucket only contains a singleton, skip the rest
+            if length == 0:
+                pass
+            elif length == 1:
+                try:
+                    self.freq_item_table[line[0]] += 1
+                except IndexError:
+                    print("[!!] IndexError: (A) i of the index. i = {}".format(line[0]))
+            else:
+                for i in range(0, length - 1):
+                    # updating item frequency in item_table
+                    try:
+                        self.freq_item_table[line[i]] += 1  # Kept getting list index out of range error here
+                    except IndexError:
+                        print("[!!] IndexError: (B) i of the index. i = {}".format(line[i]))
+
+                    # hashing pair to both hash table buckets and updating buckets' count
+                    for j in range(i + 1, length):
+                        try:
+                            self.bucket_hash[self.hash_a(i, j)] += 1
+                            self.bucket_hash_2[self.hash_b(i, j)] += 1
+                        except IndexError:  # checking for index error
+                            print("[!!] IndexError: i in bucket_hash: {} and/or bucket_hash_2: {}\
+                                    \n length of bucket_hash: {}\n length of bucket_hash_2: {}"
+                                  .format(self.hash_a(i, j), self.hash_b(i, j),
+                                          self.bucket_hash.shape, self.bucket_hash_2.shape))
+
+                # incrementing the frequency of the last item in the basket
+                try:
+                    self.freq_item_table[line[length - 1]] += 1  # Kept getting list index out of range error here
+                except IndexError:
+                    print("[!!] IndexError: (C) i of the index. i = {}".format(line[length - 1]))
+
+        # create bitmaps
+        for b in range(0, self.hash_prime):
+            if self.bucket_hash[b] >= self.s:
+                self.bitmap[b] = 1
+        for b in range(0, self.hash_prime_2):
+            if self.bucket_hash_2[b] >= self.s:
+                self.bitmap_2[b] = 1
+
+        # free hash tables to clear space
+        self.bucket_hash = None
+        self.bucket_hash_2 = None
+
+        # Pass 2
+        for basket in self.selected_baskets:
+            line = list([l for l in map(int, linecache.getline(fn, basket).split())])
+            length = len(line)
+            # update frequency of frequent pairs in candidate pair table
+            if length <= 1:
+                pass
+            else:
+                for i in range(0, length - 1):
+                    # determine if pair is frequent, if so, add to frequent pair list
+                    if self.freq_item_table[i] >= self.s:
+                        for j in range(i + 1, length):
+                            if self.freq_item_table[j] >= self.s:
+                                if self.bitmap[self.hash_a(i, j)] == 1 and self.bitmap_2[self.hash_b(i, j)] == 1:
+                                    if self.freq_pairs_list.__contains__((i, j)):
+                                        self.freq_pairs_list[(i, j)] += 1
+                                    else:
+                                        self.freq_pairs_list[(i, j)] = 1
 
         # end of run time
         end_time = time.time()
