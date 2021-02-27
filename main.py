@@ -33,6 +33,7 @@ if __name__ == '__main__':
     plt.show()
     """
 
-    p = PCY.PCY()
+    p = PCY.PCY(sample_size=1)
+    p.pcyA()
 
     print("Done")

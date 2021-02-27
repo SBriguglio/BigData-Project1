@@ -42,7 +42,7 @@ class APriori:
         self.n_sample_buckets = int(self.n_buckets * self.sample_size)
 
     def set_s(self):
-        self.s = int(self.n_buckets * self.support)
+        self.s = int(self.n_sample_buckets * self.support)
 
     def choose_selected_baskets(self):
         n = self.n_sample_buckets
