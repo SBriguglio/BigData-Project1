@@ -54,17 +54,23 @@ if __name__ == '__main__':
     t_start = start
     test(0.01)
     end = time.time()
-    print('\x1b[6;30;42m' + "RUNTIME 1%: {}".format(end-start) + '\x1b[0m')
+    t1= end - start
+    print('\x1b[6;30;42m' + "RUNTIME 1%: {}".format(t1) + '\x1b[0m')
     # Support Threshold = 5%
     start = time.time()
     test(0.05)
     end = time.time()
-    print('\x1b[6;30;42m' + "RUNTIME 5%: {}".format(end-start) + '\x1b[0m')
+    t2 = end - start
+    print('\x1b[6;30;42m' + "RUNTIME 5%: {}".format(t2) + '\x1b[0m')
     # Supper Threshold = 10%
     start = time.time()
     test(0.1)
     end = time.time()
-    print('\x1b[6;30;42m' + "RUNTIME 10%: {}".format(end-start) + '\x1b[0m')
+    t3 = end - start
+    print('\x1b[6;30;42m' + "RUNTIME 10%: {}".format(t3) + '\x1b[0m')
     print("Done")
     t_end = time.time()
+    print('\x1b[6;30;42m' + "RUNTIME 1%: {}".format(t1) + '\x1b[0m')
+    print('\x1b[6;30;42m' + "RUNTIME 5%: {}".format(t2) + '\x1b[0m')
+    print('\x1b[6;30;42m' + "RUNTIME 10%: {}".format(t3) + '\x1b[0m')
     print('\x1b[6;30;42m' + "TOTAL RUNTIME: {}".format(t_end-t_start) + '\x1b[0m')
