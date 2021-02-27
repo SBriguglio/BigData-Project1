@@ -69,7 +69,7 @@ class APriori:
     def set_pairs_tri_matrix_length(self, n):
         self.pairs_tri_matrix = self.pairs_tri_matrix[:n] + [0] * (n - len(self.pairs_tri_matrix))
 
-    def a_priori(self):
+    def a_priori(self, verbose=0):
         fn = self.filename
         # Pass 1:
         start_time = time.time()
@@ -110,6 +110,8 @@ class APriori:
         self.runtime = end_time - start_time
 
         # not included in run time because not part of A-Priori algorithm. This just prints results.
-        for i in self.freq_pairs_list:
-            index = int((i[0] - 1) * (self.max_int - (i[0] / 2))) + i[1] - i[0]
-            print("{}, {} : {}".format(i[0], i[1], self.pairs_tri_matrix[index]))
+        if verbose == 2:
+            for p in self.freq_pairs_list:
+                print("Pair: {}    Frequency: {}".format(p, self.freq_pairs_list[p]))
+        if verbose == 1:
+            print("[A-Priori]\n|  Frequent Pairs: {} Run time: {}".format(len(self.freq_pairs_list), self.runtime))

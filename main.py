@@ -33,8 +33,10 @@ if __name__ == '__main__':
     plt.show()
     """
 
-    p = PCY.PCY(sample_size=0.3)
+    #p = PCY.PCY(sample_size=0.3)
     # p.pcyA(verbose=0)
-    p.pcyC(verbose=1)
+    #p.pcyC(verbose=1)
+    #a = APriori.APriori(sample_size=0.1)
+    #a.a_priori(verbose=1)
 
     print("Done")
